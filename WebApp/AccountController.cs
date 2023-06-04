@@ -15,18 +15,20 @@ namespace WebApp
             _accountService = accountService;
         }
 
-        [Authorize] 
+        [Authorize]
         [HttpGet]
         public ValueTask<Account> Get()
         {
-            return _accountService.LoadOrCreateAsync(null /* TODO 3: Get user id from cookie */);
+            return _accountService.LoadOrCreateAsync(ClaimTypes.NameIdentifier /* TODO 3: Get user id from cookie */);
         }
 
         //TODO 5: Endpoint should works only for users with "Admin" Role
-        [Authorize]
+        //!
+        [Authorize(Roles = "Admin")]
         [HttpGet("{id}")]
         public Account GetByInternalId([FromRoute] int id)
         {
+            //!
             return _accountService.GetFromCache(id);
         }
 
@@ -36,7 +38,11 @@ namespace WebApp
         {
             //Update account in cache, don't bother saving to DB, this is not an objective of this task.
             var account = await Get();
-            account.Counter++;
+            //!
+            if (account.Role == "Admin")
+                account.Counter++;
+            else
+                Unauthorized();
         }
     }
 }
